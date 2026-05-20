@@ -1841,6 +1841,17 @@ document.querySelectorAll('.mode-btn').forEach(btn => {
 document.getElementById('start-btn').addEventListener('click', startGame);
 document.getElementById('restart-btn').addEventListener('click', startGame);
 document.getElementById('home-btn').addEventListener('click', () => showScreen('start-screen'));
+
+//
+document.addEventListener('click', function() {
+    if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(err => {
+            console.log(`전체화면 오류: ${err.message}`);
+        });
+    }
+});
+//
+
 </script>
 <script src="https://replit-cdn.com/replit-pill/replit-pill.global.js" data-repl-id="7c168b50-4c48-4738-81a8-b9348316cb4d"></script></body>
 </html>
