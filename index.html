@@ -893,7 +893,7 @@
       <thead><tr><th>DNA</th><th></th><th>RNA</th><th>설명</th></tr></thead>
       <tbody>
         <tr><td><span style="color:var(--A)">A</span></td><td class="arrow-cell">→</td><td><span style="color:var(--U)">U</span></td><td style="color:var(--text-dim);font-size:0.78rem">아데닌 → 유라실</td></tr>
-        <tr><td><span style="color:var(--T)">T</span></td><td class="arrow-cell">→</td><td><span style="color:var(--A)">A</span></td><td style="color:var(--text-dim);font-size:0.78rem">티민 → 아데닌</td></tr>
+        <tr><td><span style="color:var(--T)">T</span></td><td class="arrow-cell">→</td><td><span style="color:var(--A)">A</span></td><td style="color:var(--text-dim);font-size:0.78rem">타이민 → 아데닌</td></tr>
         <tr><td><span style="color:var(--G)">G</span></td><td class="arrow-cell">→</td><td><span style="color:var(--C)">C</span></td><td style="color:var(--text-dim);font-size:0.78rem">구아닌 → 사이토신</td></tr>
         <tr><td><span style="color:var(--C)">C</span></td><td class="arrow-cell">→</td><td><span style="color:var(--G)">G</span></td><td style="color:var(--text-dim);font-size:0.78rem">사이토신 → 구아닌</td></tr>
       </tbody>
@@ -1144,7 +1144,7 @@ function renderStrand(bases, label, wrongIdx = -1) {
 }
 
 function getBaseName(b) {
-  const names = { A: '아데닌', T: '티민', G: '구아닌', C: '사이토신', U: '유라실' };
+  const names = { A: '아데닌', T: '타이민', G: '구아닌', C: '사이토신', U: '유라실' };
   return names[b] || b;
 }
 
@@ -1328,9 +1328,9 @@ function genIdentify() {
     seq,
     isDNA,
     answer: isDNA ? 'DNA' : 'RNA',
-    hint: 'DNA는 T(티민) 포함, RNA는 U(유라실) 포함. T와 U를 동시에 가질 수 없습니다.',
+    hint: 'DNA는 T(타이민) 포함, RNA는 U(유라실) 포함. T와 U를 동시에 가질 수 없습니다.',
     explanation() {
-      if (isDNA) return `염기서열에 T(티민)가 있으므로 DNA입니다. DNA는 A, T, G, C를 사용합니다.`;
+      if (isDNA) return `염기서열에 T(타이민)가 있으므로 DNA입니다. DNA는 A, T, G, C를 사용합니다.`;
       return `염기서열에 U(유라실)가 있으므로 RNA입니다. RNA는 A, U, G, C를 사용합니다.`;
     }
   };
