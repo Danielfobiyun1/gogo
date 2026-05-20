@@ -1,0 +1,1846 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DNA/RNA 염기서열 퍼즐</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Noto+Sans+KR:wght@300;400;600;700&display=swap');
+
+  :root {
+    --bg: #050d1a;
+    --surface: #0a1628;
+    --panel: #0f1f35;
+    --border: #1a3a5c;
+    --accent: #00d4ff;
+    --accent2: #00ff9d;
+    --accent3: #ff6b35;
+    --accent4: #c77dff;
+    --text: #c8e0f0;
+    --text-dim: #5a8aaa;
+    --A: #ff6b6b;
+    --T: #ffd166;
+    --G: #06d6a0;
+    --C: #118ab2;
+    --U: #c77dff;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Noto Sans KR', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Helix background animation */
+  #helix-bg {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.07;
+  }
+
+  .screen {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    overflow-y: auto;
+    overflow-x: hidden;
+    z-index: 10;
+    transition: opacity 0.5s, transform 0.5s;
+    box-sizing: border-box;
+  }
+
+  .screen.hidden {
+    opacity: 0;
+    pointer-events: none;
+    transform: scale(0.97);
+  }
+
+  /* ─── START SCREEN ─── */
+  #start-screen {
+    background: radial-gradient(ellipse at center, #0a1628 0%, #050d1a 100%);
+    justify-content: flex-start;
+    align-items: center;
+    padding: 24px 16px;
+    gap: 10px;
+  }
+
+  .dna-title {
+    text-align: center;
+    margin-bottom: 16px;
+  }
+
+  .dna-title h1 {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    letter-spacing: 4px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-shadow: none;
+    filter: drop-shadow(0 0 20px var(--accent));
+  }
+
+  .dna-title p {
+    color: var(--text-dim);
+    font-size: 1rem;
+    margin-top: 8px;
+    letter-spacing: 2px;
+  }
+
+  .strand-preview {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    margin: 10px 0;
+    flex-wrap: wrap;
+  }
+
+  .base-chip {
+    width: 42px; height: 42px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 1.1rem;
+    font-weight: bold;
+    border: 2px solid currentColor;
+    box-shadow: 0 0 12px currentColor;
+    animation: pulse 2s infinite alternate;
+  }
+
+  .base-A { color: var(--A); background: rgba(255,107,107,0.12); }
+  .base-T { color: var(--T); background: rgba(255,209,102,0.12); }
+  .base-G { color: var(--G); background: rgba(6,214,160,0.12); }
+  .base-C { color: var(--C); background: rgba(17,138,178,0.12); }
+  .base-U { color: var(--U); background: rgba(199,125,255,0.12); }
+
+  @keyframes pulse {
+    from { transform: scale(1); box-shadow: 0 0 8px currentColor; }
+    to { transform: scale(1.08); box-shadow: 0 0 20px currentColor; }
+  }
+
+  .start-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px 28px;
+    max-width: 520px;
+    width: 95%;
+    text-align: center;
+    box-shadow: 0 0 40px rgba(0,212,255,0.08);
+  }
+
+  .rule-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.9rem;
+  }
+
+  .rule-table th {
+    color: var(--accent);
+    padding: 8px;
+    border-bottom: 1px solid var(--border);
+    font-weight: normal;
+    letter-spacing: 1px;
+  }
+
+  .rule-table td {
+    padding: 10px 8px;
+    border-bottom: 1px solid rgba(26,58,92,0.5);
+    text-align: center;
+  }
+
+  .rule-table tr:last-child td { border-bottom: none; }
+
+  .arrow-cell { color: var(--text-dim); }
+
+  .diff-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 0.85rem;
+  }
+
+  .diff-table th {
+    background: rgba(0,212,255,0.08);
+    color: var(--accent);
+    padding: 8px 12px;
+    text-align: center;
+    border: 1px solid var(--border);
+  }
+
+  .diff-table td {
+    padding: 8px 12px;
+    border: 1px solid rgba(26,58,92,0.5);
+    text-align: center;
+    color: var(--text-dim);
+    font-size: 0.83rem;
+  }
+
+  .mode-select {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 24px 0;
+  }
+
+  .mode-btn {
+    background: rgba(0,212,255,0.06);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 20px;
+    color: var(--text);
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .mode-btn:hover, .mode-btn.active {
+    background: rgba(0,212,255,0.14);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .mode-icon { font-size: 1.2rem; }
+
+  .btn-primary {
+    background: linear-gradient(135deg, #006d8f, #00a8cc);
+    border: none;
+    border-radius: 10px;
+    padding: 14px 48px;
+    color: #fff;
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    letter-spacing: 1px;
+    transition: all 0.2s;
+    box-shadow: 0 0 20px rgba(0,168,204,0.3);
+    margin-top: 8px;
+  }
+
+  .btn-primary:hover {
+    background: linear-gradient(135deg, #0089b3, #00cef5);
+    box-shadow: 0 0 30px rgba(0,212,255,0.5);
+    transform: translateY(-1px);
+  }
+
+  /* ─── GAME SCREEN ─── */
+  #game-screen {
+    background: var(--bg);
+    padding: 20px;
+    justify-content: flex-start;
+    overflow-y: auto;
+  }
+
+  .game-header {
+    width: 100%;
+    max-width: 800px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin-bottom: 20px;
+    flex-shrink: 0;
+  }
+
+  .stat-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+
+  .stat-label {
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .stat-value {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 1.3rem;
+    color: var(--accent);
+  }
+
+  .stat-value.score-val { color: var(--accent2); }
+  .stat-value.timer-val { color: var(--accent3); }
+  .stat-value.timer-warn { color: #ff3b3b; animation: blink 0.6s infinite; }
+
+  @keyframes blink {
+    50% { opacity: 0.4; }
+  }
+
+  .timer-bar-wrap {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%;
+    height: 4px;
+    background: rgba(26,58,92,0.4);
+    z-index: 100;
+  }
+
+  #timer-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent2), var(--accent));
+    transition: width 0.5s linear, background 0.5s;
+  }
+
+  .question-card {
+    width: 100%;
+    max-width: 800px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px;
+    box-shadow: 0 0 40px rgba(0,212,255,0.05);
+    margin-bottom: 20px;
+  }
+
+  .q-type-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(0,212,255,0.1);
+    border: 1px solid rgba(0,212,255,0.3);
+    border-radius: 20px;
+    padding: 4px 14px;
+    font-size: 0.78rem;
+    color: var(--accent);
+    letter-spacing: 1px;
+    margin-bottom: 18px;
+  }
+
+  .q-number {
+    font-family: 'Share Tech Mono', monospace;
+    color: var(--text-dim);
+    font-size: 0.85rem;
+    margin-bottom: 12px;
+  }
+
+  .q-text {
+    font-size: 1.05rem;
+    line-height: 1.8;
+    color: var(--text);
+    margin-bottom: 24px;
+  }
+
+  .strand-display {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin: 20px 0;
+    flex-wrap: wrap;
+  }
+
+  .strand-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    min-width: 40px;
+    text-align: right;
+  }
+
+  .bases-row {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .base-box {
+    width: 44px; height: 44px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 1.15rem;
+    font-weight: bold;
+    position: relative;
+    transition: all 0.2s;
+  }
+
+  .base-box.base-A { background: rgba(255,107,107,0.15); color: var(--A); border: 1px solid rgba(255,107,107,0.4); }
+  .base-box.base-T { background: rgba(255,209,102,0.15); color: var(--T); border: 1px solid rgba(255,209,102,0.4); }
+  .base-box.base-G { background: rgba(6,214,160,0.15); color: var(--G); border: 1px solid rgba(6,214,160,0.4); }
+  .base-box.base-C { background: rgba(17,138,178,0.15); color: var(--C); border: 1px solid rgba(17,138,178,0.4); }
+  .base-box.base-U { background: rgba(199,125,255,0.15); color: var(--U); border: 1px solid rgba(199,125,255,0.4); }
+  .base-box.base-blank { background: rgba(90,138,170,0.08); color: transparent; border: 1px dashed rgba(90,138,170,0.5); }
+  .base-box.base-wrong { background: rgba(255,59,59,0.15); border: 2px solid rgba(255,59,59,0.7); cursor: pointer; }
+  .base-box.base-wrong:hover { background: rgba(255,59,59,0.28); transform: scale(1.05); }
+
+  .connector-line {
+    width: 100%;
+    max-width: 540px;
+    display: flex;
+    justify-content: center;
+    margin: 2px 0 2px 56px;
+  }
+
+  .connector-pipes {
+    display: flex;
+    gap: 6px;
+  }
+
+  .pipe {
+    width: 44px;
+    text-align: center;
+    font-size: 0.7rem;
+    color: var(--border);
+    line-height: 1;
+  }
+
+  /* Answer area */
+  .answer-area {
+    margin-top: 20px;
+  }
+
+  .answer-label {
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+    margin-bottom: 12px;
+    text-transform: uppercase;
+  }
+
+  /* Fill-blank input */
+  .fill-input-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .fill-blank-input {
+    width: 52px; height: 52px;
+    background: rgba(0,212,255,0.06);
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    color: var(--accent);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 1.2rem;
+    text-align: center;
+    text-transform: uppercase;
+    outline: none;
+    transition: all 0.2s;
+  }
+
+  .fill-blank-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 12px rgba(0,212,255,0.3);
+    background: rgba(0,212,255,0.1);
+  }
+
+  .fill-blank-input.correct {
+    border-color: var(--accent2);
+    background: rgba(0,255,157,0.1);
+    color: var(--accent2);
+    animation: correctPop 0.4s ease;
+  }
+
+  .fill-blank-input.wrong {
+    border-color: var(--accent3);
+    background: rgba(255,107,53,0.1);
+    color: var(--accent3);
+    animation: wrongShake 0.4s ease;
+  }
+
+  @keyframes correctPop {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.15); }
+    100% { transform: scale(1); }
+  }
+
+  @keyframes wrongShake {
+    0%,100% { transform: translateX(0); }
+    25% { transform: translateX(-6px); }
+    75% { transform: translateX(6px); }
+  }
+
+  /* Option buttons */
+  .options-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 10px;
+  }
+
+  .option-btn {
+    background: rgba(0,212,255,0.05);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 18px;
+    color: var(--text);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+    letter-spacing: 1px;
+  }
+
+  .option-btn:hover:not(:disabled) {
+    background: rgba(0,212,255,0.12);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .option-btn.selected-correct {
+    background: rgba(0,255,157,0.12);
+    border-color: var(--accent2);
+    color: var(--accent2);
+  }
+
+  .option-btn.selected-wrong {
+    background: rgba(255,107,53,0.12);
+    border-color: var(--accent3);
+    color: var(--accent3);
+  }
+
+  .option-btn.reveal-correct {
+    background: rgba(0,255,157,0.08);
+    border-color: rgba(0,255,157,0.4);
+    color: var(--accent2);
+  }
+
+  .option-btn:disabled { cursor: default; }
+
+  /* Wrong-base selector */
+  .wrong-base-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .wrong-select-box {
+    width: 50px; height: 50px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 1.15rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 2px solid var(--border);
+  }
+
+  .wrong-select-box:hover { transform: scale(1.1); }
+
+  .wrong-select-box.selected-wrong-correct {
+    border-color: var(--accent2) !important;
+    box-shadow: 0 0 14px var(--accent2);
+    transform: scale(1.12);
+  }
+
+  .wrong-select-box.selected-wrong-miss {
+    border-color: var(--accent3) !important;
+    box-shadow: 0 0 14px var(--accent3);
+    animation: wrongShake 0.4s ease;
+  }
+
+  .wrong-select-box.highlight-correct {
+    border-color: var(--accent2) !important;
+    box-shadow: 0 0 10px var(--accent2);
+  }
+
+  /* Feedback */
+  .feedback-box {
+    margin-top: 18px;
+    padding: 14px 18px;
+    border-radius: 10px;
+    font-size: 0.93rem;
+    line-height: 1.6;
+    display: none;
+  }
+
+  .feedback-box.show { display: block; }
+
+  .feedback-box.correct-fb {
+    background: rgba(0,255,157,0.08);
+    border: 1px solid rgba(0,255,157,0.3);
+    color: var(--accent2);
+  }
+
+  .feedback-box.wrong-fb {
+    background: rgba(255,107,53,0.08);
+    border: 1px solid rgba(255,107,53,0.3);
+    color: var(--accent3);
+  }
+
+  .feedback-box.timeout-fb {
+    background: rgba(199,125,255,0.08);
+    border: 1px solid rgba(199,125,255,0.3);
+    color: var(--accent4);
+  }
+
+  /* Action row */
+  .action-row {
+    display: flex;
+    gap: 12px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+  }
+
+  .btn-check {
+    background: linear-gradient(135deg, #005f73, #0a9396);
+    border: none;
+    border-radius: 9px;
+    padding: 12px 32px;
+    color: #fff;
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 0 16px rgba(10,147,150,0.3);
+  }
+
+  .btn-check:hover:not(:disabled) {
+    box-shadow: 0 0 24px rgba(10,147,150,0.6);
+    transform: translateY(-1px);
+  }
+
+  .btn-check:disabled { opacity: 0.5; cursor: default; }
+
+  .btn-next {
+    background: linear-gradient(135deg, #4a1a7a, #7b2fbe);
+    border: none;
+    border-radius: 9px;
+    padding: 12px 32px;
+    color: #fff;
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 0 16px rgba(123,47,190,0.3);
+    display: none;
+  }
+
+  .btn-next:hover {
+    box-shadow: 0 0 24px rgba(123,47,190,0.6);
+    transform: translateY(-1px);
+  }
+
+  .btn-next.show { display: block; }
+
+  .btn-quit {
+    background: transparent;
+    border: 1px solid rgba(90,138,170,0.4);
+    border-radius: 9px;
+    padding: 12px 24px;
+    color: var(--text-dim);
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-quit:hover {
+    border-color: var(--accent3);
+    color: var(--accent3);
+  }
+
+  /* Progress */
+  .progress-row {
+    width: 100%;
+    max-width: 800px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .progress-bar-wrap {
+    flex: 1;
+    height: 6px;
+    background: rgba(26,58,92,0.5);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  #progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 3px;
+    transition: width 0.5s ease;
+  }
+
+  .progress-text {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    white-space: nowrap;
+  }
+
+  /* ─── END SCREEN ─── */
+  #end-screen {
+    background: radial-gradient(ellipse at center, #0a1628 0%, #050d1a 100%);
+    justify-content: flex-start;
+    align-items: center;
+    padding: 24px 16px;
+  }
+
+  .end-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px 32px;
+    max-width: 520px;
+    width: 95%;
+    text-align: center;
+    box-shadow: 0 0 60px rgba(0,212,255,0.08);
+  }
+
+  .end-title {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 1.4rem;
+    color: var(--accent);
+    letter-spacing: 3px;
+    margin-bottom: 4px;
+    filter: drop-shadow(0 0 12px var(--accent));
+  }
+
+  .end-subtitle {
+    color: var(--text-dim);
+    font-size: 0.85rem;
+    margin-bottom: 12px;
+  }
+
+  .score-big {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 4rem;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    filter: drop-shadow(0 0 20px var(--accent));
+    line-height: 1;
+    margin: 8px 0;
+  }
+
+  .score-max {
+    color: var(--text-dim);
+    font-size: 1.1rem;
+    margin-bottom: 12px;
+  }
+
+  .result-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin: 12px 0;
+  }
+
+  .result-item {
+    background: rgba(0,212,255,0.05);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .result-item-label {
+    font-size: 0.72rem;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .result-item-val {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 1.4rem;
+    color: var(--accent);
+  }
+
+  .grade-badge {
+    display: inline-block;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 1rem;
+    padding: 5px 16px;
+    border-radius: 20px;
+    margin-bottom: 10px;
+    letter-spacing: 2px;
+  }
+
+  .grade-S { background: rgba(0,255,157,0.15); color: var(--accent2); border: 1px solid var(--accent2); box-shadow: 0 0 20px rgba(0,255,157,0.3); }
+  .grade-A { background: rgba(0,212,255,0.15); color: var(--accent); border: 1px solid var(--accent); }
+  .grade-B { background: rgba(199,125,255,0.15); color: var(--accent4); border: 1px solid var(--accent4); }
+  .grade-C { background: rgba(255,209,102,0.15); color: var(--T); border: 1px solid var(--T); }
+  .grade-D { background: rgba(255,107,53,0.15); color: var(--accent3); border: 1px solid var(--accent3); }
+
+  .end-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 24px;
+  }
+
+  .btn-restart {
+    background: linear-gradient(135deg, #006d8f, #00a8cc);
+    border: none;
+    border-radius: 10px;
+    padding: 14px;
+    color: #fff;
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 0 20px rgba(0,168,204,0.3);
+  }
+
+  .btn-restart:hover {
+    box-shadow: 0 0 30px rgba(0,212,255,0.5);
+    transform: translateY(-1px);
+  }
+
+  .btn-home {
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px;
+    color: var(--text-dim);
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-home:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .segment { display: none; }
+  .segment.active { display: block; }
+
+  /* Tooltip */
+  .tooltip {
+    position: absolute;
+    bottom: -30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1a3a5c;
+    color: var(--text-dim);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.65rem;
+    padding: 3px 7px;
+    border-radius: 4px;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s;
+    z-index: 99;
+  }
+
+  .base-box:hover .tooltip { opacity: 1; }
+
+  @media (max-width: 600px) {
+    .start-card, .end-card { padding: 24px 18px; }
+    .question-card { padding: 18px; }
+    .game-header { padding: 10px 14px; }
+    .base-box { width: 36px; height: 36px; font-size: 0.95rem; }
+    .fill-blank-input { width: 42px; height: 42px; }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="helix-bg"></canvas>
+<div class="timer-bar-wrap"><div id="timer-bar"></div></div>
+
+<!-- ═══ START SCREEN ═══ -->
+<div class="screen" id="start-screen">
+  <div class="dna-title">
+    <h1>DNA/RNA PUZZLE</h1>
+    <p>염기서열 분석 훈련 시스템 v2.0</p>
+  </div>
+
+  <div class="strand-preview">
+    <div class="base-chip base-A">A</div>
+    <div class="base-chip base-T">T</div>
+    <div class="base-chip base-G">G</div>
+    <div class="base-chip base-C">C</div>
+    <div class="base-chip base-U" style="animation-delay:0.4s">U</div>
+  </div>
+
+  <div class="start-card">
+    <h2 style="color:var(--accent);font-size:1rem;letter-spacing:2px;margin-bottom:16px">전사 규칙 / TRANSCRIPTION RULES</h2>
+    <table class="rule-table">
+      <thead><tr><th>DNA</th><th></th><th>RNA</th><th>설명</th></tr></thead>
+      <tbody>
+        <tr><td><span style="color:var(--A)">A</span></td><td class="arrow-cell">→</td><td><span style="color:var(--U)">U</span></td><td style="color:var(--text-dim);font-size:0.78rem">아데닌 → 유라실</td></tr>
+        <tr><td><span style="color:var(--T)">T</span></td><td class="arrow-cell">→</td><td><span style="color:var(--A)">A</span></td><td style="color:var(--text-dim);font-size:0.78rem">티민 → 아데닌</td></tr>
+        <tr><td><span style="color:var(--G)">G</span></td><td class="arrow-cell">→</td><td><span style="color:var(--C)">C</span></td><td style="color:var(--text-dim);font-size:0.78rem">구아닌 → 사이토신</td></tr>
+        <tr><td><span style="color:var(--C)">C</span></td><td class="arrow-cell">→</td><td><span style="color:var(--G)">G</span></td><td style="color:var(--text-dim);font-size:0.78rem">사이토신 → 구아닌</td></tr>
+      </tbody>
+    </table>
+
+    <table class="diff-table" style="margin-top:20px">
+      <thead><tr><th>구분</th><th>염기</th><th>당</th><th>형태</th></tr></thead>
+      <tbody>
+        <tr><td style="color:var(--accent)">DNA</td><td><span style="color:var(--A)">A</span> <span style="color:var(--T)">T</span> <span style="color:var(--G)">G</span> <span style="color:var(--C)">C</span></td><td>디옥시리보스</td><td>이중나선</td></tr>
+        <tr><td style="color:var(--accent2)">RNA</td><td><span style="color:var(--A)">A</span> <span style="color:var(--U)">U</span> <span style="color:var(--G)">G</span> <span style="color:var(--C)">C</span></td><td>리보스</td><td>단일가닥</td></tr>
+      </tbody>
+    </table>
+
+    <div class="mode-select" id="mode-select">
+      <div style="font-size:0.8rem;color:var(--text-dim);letter-spacing:1px;margin-bottom:4px">문제 유형 선택</div>
+      <label class="mode-btn active" id="mode-all">
+        <span class="mode-icon">🧬</span>
+        <span>전체 혼합 (랜덤 출제)</span>
+        <input type="radio" name="mode" value="all" checked style="display:none">
+      </label>
+      <label class="mode-btn" id="mode-fill">
+        <span class="mode-icon">✏️</span>
+        <span>빈칸 채우기</span>
+        <input type="radio" name="mode" value="fill" style="display:none">
+      </label>
+      <label class="mode-btn" id="mode-transcribe">
+        <span class="mode-icon">🔬</span>
+        <span>RNA 전사</span>
+        <input type="radio" name="mode" value="transcribe" style="display:none">
+      </label>
+      <label class="mode-btn" id="mode-wrong">
+        <span class="mode-icon">❌</span>
+        <span>잘못된 염기 찾기</span>
+        <input type="radio" name="mode" value="wrong" style="display:none">
+      </label>
+      <label class="mode-btn" id="mode-identify">
+        <span class="mode-icon">🔍</span>
+        <span>DNA / RNA 구별</span>
+        <input type="radio" name="mode" value="identify" style="display:none">
+      </label>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:16px;margin-top:8px;margin-bottom:4px">
+      <div style="font-size:0.8rem;color:var(--text-dim)">문항 수</div>
+      <select id="q-count-sel" style="background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:6px 10px;font-size:0.9rem;outline:none">
+        <option value="5">5문항</option>
+        <option value="10" selected>10문항</option>
+        <option value="15">15문항</option>
+        <option value="20">20문항</option>
+      </select>
+      <div style="font-size:0.8rem;color:var(--text-dim);margin-left:8px">제한시간</div>
+      <select id="time-sel" style="background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:6px 10px;font-size:0.9rem;outline:none">
+        <option value="20">20초</option>
+        <option value="30" selected>30초</option>
+        <option value="45">45초</option>
+        <option value="60">60초</option>
+      </select>
+    </div>
+
+    <button class="btn-primary" id="start-btn">게임 시작</button>
+  </div>
+</div>
+
+<!-- ═══ GAME SCREEN ═══ -->
+<div class="screen hidden" id="game-screen">
+  <div class="game-header">
+    <div class="stat-box">
+      <span class="stat-label">SCORE</span>
+      <span class="stat-value score-val" id="score-display">0</span>
+    </div>
+    <div class="stat-box">
+      <span class="stat-label">QUESTION</span>
+      <span class="stat-value" id="q-display">1 / 10</span>
+    </div>
+    <div class="stat-box">
+      <span class="stat-label">STREAK</span>
+      <span class="stat-value" id="streak-display" style="color:var(--accent4)">0🔥</span>
+    </div>
+    <div class="stat-box">
+      <span class="stat-label">TIME</span>
+      <span class="stat-value timer-val" id="timer-display">30</span>
+    </div>
+  </div>
+
+  <div class="progress-row">
+    <div class="progress-bar-wrap"><div id="progress-bar" style="width:0%"></div></div>
+    <span class="progress-text" id="progress-text">0 / 10</span>
+  </div>
+
+  <div class="question-card" id="question-card">
+    <!-- dynamically filled -->
+  </div>
+</div>
+
+<!-- ═══ END SCREEN ═══ -->
+<div class="screen hidden" id="end-screen">
+  <div class="end-card">
+    <div class="end-title">ANALYSIS COMPLETE</div>
+    <div class="end-subtitle">세션 결과 보고서</div>
+
+    <div class="score-big" id="end-score">0</div>
+    <div class="score-max" id="end-score-max">/ 100점</div>
+
+    <div class="grade-badge" id="end-grade">S</div>
+
+    <div class="result-grid">
+      <div class="result-item">
+        <span class="result-item-label">정답</span>
+        <span class="result-item-val" id="end-correct" style="color:var(--accent2)">0</span>
+      </div>
+      <div class="result-item">
+        <span class="result-item-label">오답</span>
+        <span class="result-item-val" id="end-wrong" style="color:var(--accent3)">0</span>
+      </div>
+      <div class="result-item">
+        <span class="result-item-label">시간초과</span>
+        <span class="result-item-val" id="end-timeout" style="color:var(--accent4)">0</span>
+      </div>
+      <div class="result-item">
+        <span class="result-item-label">최고연속</span>
+        <span class="result-item-val" id="end-streak">0</span>
+      </div>
+    </div>
+
+    <div class="end-buttons">
+      <button class="btn-restart" id="restart-btn">같은 설정으로 재시작</button>
+      <button class="btn-home" id="home-btn">처음으로 돌아가기</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ───────────────────────────────────────────────
+// HELIX BACKGROUND
+// ───────────────────────────────────────────────
+(function () {
+  const canvas = document.getElementById('helix-bg');
+  const ctx = canvas.getContext('2d');
+  let t = 0;
+
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const cx = canvas.width / 2;
+    const amp = 120, freq = 0.015, vstep = 4;
+
+    for (let y = 0; y < canvas.height; y += vstep) {
+      const phase = y * freq + t;
+      const x1 = cx + Math.sin(phase) * amp;
+      const x2 = cx + Math.sin(phase + Math.PI) * amp;
+      const r = Math.sin(phase) * 0.5 + 0.5;
+
+      ctx.beginPath();
+      ctx.arc(x1, y, 3, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(${Math.floor(r*100+100)},${Math.floor(200-r*80)},255,0.6)`;
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.arc(x2, y, 3, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(0,${Math.floor(200+r*55)},${Math.floor(r*100+100)},0.6)`;
+      ctx.fill();
+
+      if (y % 20 === 0) {
+        ctx.beginPath();
+        ctx.moveTo(x1, y);
+        ctx.lineTo(x2, y);
+        ctx.strokeStyle = 'rgba(0,180,255,0.3)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+    }
+    t += 0.015;
+    requestAnimationFrame(draw);
+  }
+
+  resize();
+  window.addEventListener('resize', resize);
+  draw();
+})();
+
+// ───────────────────────────────────────────────
+// GAME STATE
+// ───────────────────────────────────────────────
+const DNA_BASES = ['A', 'T', 'G', 'C'];
+const RNA_BASES = ['A', 'U', 'G', 'C'];
+const TRANSCRIBE = { A: 'U', T: 'A', G: 'C', C: 'G' };
+const BASE_COLORS = { A: '#ff6b6b', T: '#ffd166', G: '#06d6a0', C: '#118ab2', U: '#c77dff' };
+
+let state = {
+  questions: [],
+  current: 0,
+  score: 0,
+  correctCount: 0,
+  wrongCount: 0,
+  timeoutCount: 0,
+  streak: 0,
+  maxStreak: 0,
+  timer: null,
+  timeLeft: 30,
+  maxTime: 30,
+  answered: false,
+  totalQuestions: 10,
+  mode: 'all',
+};
+
+// ───────────────────────────────────────────────
+// UTILITIES
+// ───────────────────────────────────────────────
+function rnd(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+function rndInt(a, b) { return Math.floor(Math.random() * (b - a + 1)) + a; }
+function shuffle(arr) { return [...arr].sort(() => Math.random() - 0.5); }
+
+function genDNASeq(len) {
+  return Array.from({ length: len }, () => rnd(DNA_BASES));
+}
+
+function transcribe(seq) {
+  return seq.map(b => TRANSCRIBE[b]);
+}
+
+function colorBase(b) {
+  return `<span style="color:${BASE_COLORS[b] || '#c8e0f0'}">${b}</span>`;
+}
+
+function renderBaseBox(b, extra = '') {
+  const cls = b === '_' ? 'base-blank' : `base-${b}`;
+  return `<div class="base-box ${cls} ${extra}">${b === '_' ? '' : b}</div>`;
+}
+
+function renderStrand(bases, label, wrongIdx = -1) {
+  const boxes = bases.map((b, i) => {
+    const isWrong = i === wrongIdx;
+    const extraCls = isWrong ? 'base-wrong' : '';
+    const tooltip = getBaseName(b);
+    return `<div class="base-box base-${b} ${extraCls}" data-idx="${i}" style="position:relative">
+      ${b}
+      <span class="tooltip">${tooltip}</span>
+    </div>`;
+  }).join('');
+  return `<div class="strand-display">
+    <span class="strand-label">${label}</span>
+    <div class="bases-row">${boxes}</div>
+  </div>`;
+}
+
+function getBaseName(b) {
+  const names = { A: '아데닌', T: '티민', G: '구아닌', C: '사이토신', U: '유라실' };
+  return names[b] || b;
+}
+
+// ───────────────────────────────────────────────
+// QUESTION GENERATORS
+// ───────────────────────────────────────────────
+
+// Type 1: DNA 빈칸 채우기 (보완 DNA 가닥)
+function genFillDNA() {
+  const len = rndInt(5, 8);
+  const seq = genDNASeq(len);
+  // 상보적 DNA: A↔T, G↔C
+  const compMap = { A: 'T', T: 'A', G: 'C', C: 'G' };
+  const comp = seq.map(b => compMap[b]);
+
+  const blankCount = rndInt(2, 3);
+  const blankIndices = shuffle([...Array(len).keys()]).slice(0, blankCount);
+  blankIndices.sort((a, b) => a - b);
+
+  const answers = blankIndices.map(i => comp[i]);
+  const displayComp = comp.map((b, i) => blankIndices.includes(i) ? '_' : b);
+
+  return {
+    type: 'fill',
+    typeName: '빈칸 채우기 · DNA 상보적 가닥',
+    typeIcon: '✏️',
+    seq,
+    comp,
+    displayComp,
+    blankIndices,
+    answers,
+    mode: 'dna-comp',
+    hint: 'DNA 상보적 염기쌍: A↔T, G↔C',
+    explanation(ans) {
+      return `DNA 상보 가닥: ${seq.join('-')} → ${comp.join('-')}<br>빈칸 정답: ${blankIndices.map((i, k) => `위치${i + 1}=${ans[k] || comp[i]}`).join(', ')}`;
+    }
+  };
+}
+
+// Type 2: RNA 전사 빈칸 채우기
+function genFillRNA() {
+  const len = rndInt(5, 8);
+  const seq = genDNASeq(len);
+  const rna = transcribe(seq);
+
+  const blankCount = rndInt(2, 3);
+  const blankIndices = shuffle([...Array(len).keys()]).slice(0, blankCount);
+  blankIndices.sort((a, b) => a - b);
+
+  const answers = blankIndices.map(i => rna[i]);
+  const displayRna = rna.map((b, i) => blankIndices.includes(i) ? '_' : b);
+
+  return {
+    type: 'fill',
+    typeName: '빈칸 채우기 · RNA 전사',
+    typeIcon: '✏️',
+    seq,
+    rna,
+    displayRna,
+    blankIndices,
+    answers,
+    mode: 'rna-fill',
+    hint: 'DNA→RNA 전사: A→U, T→A, G→C, C→G',
+    explanation() {
+      return `DNA: ${seq.join('-')} → RNA: ${rna.join('-')}<br>전사규칙: A→U, T→A, G→C, C→G`;
+    }
+  };
+}
+
+// Type 3: RNA 전사 (전체 입력 옵션)
+function genTranscribe() {
+  const len = rndInt(4, 6);
+  const seq = genDNASeq(len);
+  const rna = transcribe(seq);
+
+  // 4지선다 선택지 생성
+  const correctStr = rna.join('');
+  const options = new Set([correctStr]);
+  while (options.size < 4) {
+    const fake = seq.map(b => {
+      if (Math.random() < 0.4) {
+        const pool = RNA_BASES.filter(x => x !== TRANSCRIBE[b]);
+        return rnd(pool);
+      }
+      return TRANSCRIBE[b];
+    }).join('');
+    if (fake !== correctStr) options.add(fake);
+  }
+
+  return {
+    type: 'transcribe',
+    typeName: 'RNA 전사 선택',
+    typeIcon: '🔬',
+    seq,
+    rna,
+    correctStr,
+    options: shuffle([...options]),
+    hint: 'DNA→RNA 전사: A→U, T→A, G→C, C→G',
+    explanation() {
+      return `DNA: ${seq.join('-')} → RNA: ${rna.join('-')}<br>각 염기를 전사규칙에 따라 변환합니다.`;
+    }
+  };
+}
+
+// Type 4: 잘못된 염기 찾기 (DNA 상보 가닥에서 오류)
+function genWrongBase() {
+  const len = rndInt(5, 8);
+  const seq = genDNASeq(len);
+  const compMap = { A: 'T', T: 'A', G: 'C', C: 'G' };
+  const comp = seq.map(b => compMap[b]);
+
+  const wrongIdx = rndInt(0, len - 1);
+  const wrongBase = rnd(DNA_BASES.filter(b => b !== comp[wrongIdx]));
+  const displayComp = comp.map((b, i) => i === wrongIdx ? wrongBase : b);
+
+  return {
+    type: 'wrong-base',
+    typeName: '잘못된 염기 찾기',
+    typeIcon: '❌',
+    seq,
+    comp,
+    displayComp,
+    wrongIdx,
+    wrongBase,
+    correctBase: comp[wrongIdx],
+    hint: 'DNA 상보적 염기쌍 규칙: A↔T, G↔C — 규칙에 어긋나는 염기를 클릭하세요',
+    explanation() {
+      return `위치 ${wrongIdx + 1}의 염기 ${wrongBase}는 잘못되었습니다.<br>올바른 상보 염기: ${seq[wrongIdx]}에 대해 ${comp[wrongIdx]}이 되어야 합니다.`;
+    }
+  };
+}
+
+// Type 4b: 잘못된 염기 찾기 (RNA 전사에서 오류)
+function genWrongBaseRNA() {
+  const len = rndInt(5, 8);
+  const seq = genDNASeq(len);
+  const rna = transcribe(seq);
+
+  const wrongIdx = rndInt(0, len - 1);
+  const wrongBase = rnd(RNA_BASES.filter(b => b !== rna[wrongIdx]));
+  const displayRna = rna.map((b, i) => i === wrongIdx ? wrongBase : b);
+
+  return {
+    type: 'wrong-base-rna',
+    typeName: '잘못된 RNA 염기 찾기',
+    typeIcon: '❌',
+    seq,
+    rna,
+    displayRna,
+    wrongIdx,
+    wrongBase,
+    correctBase: rna[wrongIdx],
+    hint: 'RNA 전사규칙: A→U, T→A, G→C, C→G — 규칙에 어긋나는 RNA 염기를 클릭하세요',
+    explanation() {
+      return `위치 ${wrongIdx + 1}의 RNA 염기 ${wrongBase}는 잘못되었습니다.<br>DNA ${seq[wrongIdx]}에 대해 올바른 RNA 염기는 ${rna[wrongIdx]}입니다.`;
+    }
+  };
+}
+
+// Type 5: DNA / RNA 구별
+function genIdentify() {
+  const isDNA = Math.random() < 0.5;
+  const len = rndInt(5, 8);
+  let seq;
+  if (isDNA) {
+    // 반드시 T가 1개 이상 포함되도록 생성
+    do {
+      seq = genDNASeq(len);
+    } while (!seq.includes('T'));
+  } else {
+    // 반드시 U가 1개 이상 포함되도록 생성 (T 없음)
+    do {
+      seq = Array.from({ length: len }, () => rnd(['A', 'U', 'G', 'C']));
+    } while (!seq.includes('U'));
+  }
+
+  return {
+    type: 'identify',
+    typeName: 'DNA / RNA 구별',
+    typeIcon: '🔍',
+    seq,
+    isDNA,
+    answer: isDNA ? 'DNA' : 'RNA',
+    hint: 'DNA는 T(티민) 포함, RNA는 U(유라실) 포함. T와 U를 동시에 가질 수 없습니다.',
+    explanation() {
+      if (isDNA) return `염기서열에 T(티민)가 있으므로 DNA입니다. DNA는 A, T, G, C를 사용합니다.`;
+      return `염기서열에 U(유라실)가 있으므로 RNA입니다. RNA는 A, U, G, C를 사용합니다.`;
+    }
+  };
+}
+
+// ───────────────────────────────────────────────
+// QUESTION POOL
+// ───────────────────────────────────────────────
+function generateQuestions(count, mode) {
+  const generators = {
+    fill: [genFillDNA, genFillRNA],
+    transcribe: [genTranscribe],
+    wrong: [genWrongBase, genWrongBaseRNA],
+    identify: [genIdentify],
+    all: [genFillDNA, genFillRNA, genTranscribe, genWrongBase, genWrongBaseRNA, genIdentify],
+  };
+
+  const pool = generators[mode] || generators.all;
+  return Array.from({ length: count }, (_, i) => {
+    const gen = pool[i % pool.length];
+    return gen();
+  }).sort(() => Math.random() - 0.5);
+}
+
+// ───────────────────────────────────────────────
+// RENDER QUESTION
+// ───────────────────────────────────────────────
+function renderQuestion(q, idx) {
+  const card = document.getElementById('question-card');
+  let html = '';
+
+  const badgeHtml = `<div class="q-type-badge"><span>${q.typeIcon}</span><span>${q.typeName}</span></div>`;
+  const numHtml = `<div class="q-number">문제 ${idx + 1} / ${state.totalQuestions}</div>`;
+  const hintHtml = `<div style="font-size:0.78rem;color:var(--text-dim);margin-bottom:16px;padding:8px 12px;background:rgba(0,212,255,0.04);border-left:2px solid var(--border);border-radius:4px">${q.hint}</div>`;
+
+  if (q.type === 'fill' && q.mode === 'dna-comp') {
+    const topStrand = q.seq.map(b =>
+      `<div class="base-box base-${b}" style="position:relative">${b}<span class="tooltip">${getBaseName(b)}</span></div>`
+    ).join('');
+    const botStrand = q.displayComp.map((b, i) => {
+      if (b === '_') return `<div class="base-box base-blank" style="border:2px dashed rgba(0,212,255,0.5)"><span style="color:var(--text-dim);font-size:0.7rem">${i + 1}</span></div>`;
+      return `<div class="base-box base-${b}" style="position:relative">${b}<span class="tooltip">${getBaseName(b)}</span></div>`;
+    }).join('');
+
+    html = `${badgeHtml}${numHtml}
+    <div class="q-text">아래 DNA의 <strong style="color:var(--accent)">상보적 가닥</strong>에서 빈칸(_)에 알맞은 염기를 입력하세요.</div>
+    ${hintHtml}
+    <div class="strand-display"><span class="strand-label">5'→3'</span><div class="bases-row">${topStrand}</div></div>
+    <div style="margin:4px 0 4px 56px;color:var(--border);font-size:0.8rem;letter-spacing:2px">|||||||||||||||</div>
+    <div class="strand-display"><span class="strand-label">3'→5'</span><div class="bases-row">${botStrand}</div></div>
+    <div class="answer-area">
+      <div class="answer-label">빈칸 ${q.blankIndices.length}개 입력 (위치: ${q.blankIndices.map(i => i + 1).join(', ')})</div>
+      <div class="fill-input-row" id="fill-inputs">
+        ${q.blankIndices.map((_, k) => `<input class="fill-blank-input" id="fill-${k}" maxlength="1" placeholder="?" autocomplete="off">`).join('')}
+      </div>
+    </div>`;
+
+  } else if (q.type === 'fill' && q.mode === 'rna-fill') {
+    const topStrand = q.seq.map(b =>
+      `<div class="base-box base-${b}" style="position:relative">${b}<span class="tooltip">${getBaseName(b)}</span></div>`
+    ).join('');
+    const botStrand = q.displayRna.map((b, i) => {
+      if (b === '_') return `<div class="base-box base-blank" style="border:2px dashed rgba(199,125,255,0.5)"><span style="color:var(--text-dim);font-size:0.7rem">${i + 1}</span></div>`;
+      return `<div class="base-box base-${b}" style="position:relative">${b}<span class="tooltip">${getBaseName(b)}</span></div>`;
+    }).join('');
+
+    html = `${badgeHtml}${numHtml}
+    <div class="q-text">아래 DNA가 전사될 때 생성되는 <strong style="color:var(--U)">RNA 가닥</strong>의 빈칸을 채우세요.</div>
+    ${hintHtml}
+    <div class="strand-display"><span class="strand-label" style="color:var(--accent)">DNA</span><div class="bases-row">${topStrand}</div></div>
+    <div style="margin:6px 0 6px 56px;color:var(--border);font-size:1rem">↓ 전사</div>
+    <div class="strand-display"><span class="strand-label" style="color:var(--U)">RNA</span><div class="bases-row">${botStrand}</div></div>
+    <div class="answer-area">
+      <div class="answer-label">빈칸 ${q.blankIndices.length}개 입력 (위치: ${q.blankIndices.map(i => i + 1).join(', ')})</div>
+      <div class="fill-input-row" id="fill-inputs">
+        ${q.blankIndices.map((_, k) => `<input class="fill-blank-input" id="fill-${k}" maxlength="1" placeholder="?" autocomplete="off">`).join('')}
+      </div>
+    </div>`;
+
+  } else if (q.type === 'transcribe') {
+    const seqHtml = q.seq.map(b =>
+      `<div class="base-box base-${b}" style="position:relative">${b}<span class="tooltip">${getBaseName(b)}</span></div>`
+    ).join('');
+
+    html = `${badgeHtml}${numHtml}
+    <div class="q-text">아래 <strong style="color:var(--accent)">DNA 주형 가닥</strong>이 전사되어 만들어지는 <strong style="color:var(--U)">mRNA</strong>를 고르세요.</div>
+    ${hintHtml}
+    <div class="strand-display"><span class="strand-label">DNA</span><div class="bases-row">${seqHtml}</div></div>
+    <div style="margin:6px 0 6px 56px;color:var(--border);font-size:1rem">↓ 전사 →</div>
+    <div class="answer-area">
+      <div class="answer-label">전사된 RNA 선택</div>
+      <div class="options-grid" id="options-grid">
+        ${q.options.map(opt => {
+          const bases = opt.split('').map(b =>
+            `<span style="color:${BASE_COLORS[b]};font-family:'Share Tech Mono',monospace">${b}</span>`
+          ).join(' ');
+          return `<button class="option-btn" data-val="${opt}">${bases}</button>`;
+        }).join('')}
+      </div>
+    </div>`;
+
+  } else if (q.type === 'wrong-base') {
+    const topHtml = q.seq.map(b =>
+      `<div class="base-box base-${b}" style="position:relative">${b}<span class="tooltip">${getBaseName(b)}</span></div>`
+    ).join('');
+    const botHtml = q.displayComp.map((b, i) =>
+      `<div class="base-box base-${b} wrong-select-box" data-idx="${i}" style="position:relative;cursor:pointer">${b}<span class="tooltip">${getBaseName(b)}</span></div>`
+    ).join('');
+
+    html = `${badgeHtml}${numHtml}
+    <div class="q-text">DNA 이중가닥에서 <strong style="color:var(--accent3)">상보적 규칙에 어긋나는 염기</strong>를 찾아 클릭하세요.</div>
+    ${hintHtml}
+    <div class="strand-display"><span class="strand-label">5'→3'</span><div class="bases-row">${topHtml}</div></div>
+    <div style="margin:4px 0 4px 56px;color:var(--border);font-size:0.8rem;letter-spacing:2px">|||||||||||||||</div>
+    <div class="strand-display"><span class="strand-label">3'→5'</span><div class="bases-row wrong-base-row" id="wrong-row">${botHtml}</div></div>
+    <div class="answer-area"><div class="answer-label">3'→5' 가닥에서 잘못된 염기 클릭</div></div>`;
+
+  } else if (q.type === 'wrong-base-rna') {
+    const topHtml = q.seq.map(b =>
+      `<div class="base-box base-${b}" style="position:relative">${b}<span class="tooltip">${getBaseName(b)}</span></div>`
+    ).join('');
+    const botHtml = q.displayRna.map((b, i) =>
+      `<div class="base-box base-${b} wrong-select-box" data-idx="${i}" style="position:relative;cursor:pointer">${b}<span class="tooltip">${getBaseName(b)}</span></div>`
+    ).join('');
+
+    html = `${badgeHtml}${numHtml}
+    <div class="q-text">RNA 전사 결과에서 <strong style="color:var(--accent3)">잘못 전사된 RNA 염기</strong>를 찾아 클릭하세요.</div>
+    ${hintHtml}
+    <div class="strand-display"><span class="strand-label" style="color:var(--accent)">DNA</span><div class="bases-row">${topHtml}</div></div>
+    <div style="margin:6px 0 6px 56px;color:var(--border)">↓ 전사</div>
+    <div class="strand-display"><span class="strand-label" style="color:var(--U)">RNA</span><div class="bases-row wrong-base-row" id="wrong-row">${botHtml}</div></div>
+    <div class="answer-area"><div class="answer-label">RNA 가닥에서 잘못된 염기 클릭</div></div>`;
+
+  } else if (q.type === 'identify') {
+    const seqHtml = q.seq.map(b =>
+      `<div class="base-box base-${b}" style="position:relative">${b}<span class="tooltip">${getBaseName(b)}</span></div>`
+    ).join('');
+
+    html = `${badgeHtml}${numHtml}
+    <div class="q-text">아래 염기서열은 <strong style="color:var(--accent)">DNA</strong>인가요, <strong style="color:var(--accent2)">RNA</strong>인가요?</div>
+    ${hintHtml}
+    <div class="strand-display"><span class="strand-label">?</span><div class="bases-row">${seqHtml}</div></div>
+    <div class="answer-area">
+      <div class="answer-label">종류 선택</div>
+      <div class="options-grid" id="options-grid">
+        <button class="option-btn" data-val="DNA" style="font-size:1.3rem;font-weight:700;letter-spacing:3px;color:var(--accent)">DNA</button>
+        <button class="option-btn" data-val="RNA" style="font-size:1.3rem;font-weight:700;letter-spacing:3px;color:var(--accent2)">RNA</button>
+      </div>
+    </div>`;
+  }
+
+  // Feedback + actions
+  html += `
+    <div class="feedback-box" id="feedback-box"></div>
+    <div class="action-row">
+      <button class="btn-check" id="check-btn">정답 확인</button>
+      <button class="btn-next show" id="next-btn" style="display:none">다음 문제 →</button>
+      <button class="btn-quit" id="quit-btn">종료</button>
+    </div>`;
+
+  card.innerHTML = html;
+  attachListeners(q);
+}
+
+// ───────────────────────────────────────────────
+// ATTACH LISTENERS
+// ───────────────────────────────────────────────
+function attachListeners(q) {
+  const checkBtn = document.getElementById('check-btn');
+  const nextBtn = document.getElementById('next-btn');
+  const quitBtn = document.getElementById('quit-btn');
+
+  quitBtn.addEventListener('click', () => endGame());
+
+  // Fill inputs: auto-uppercase, auto-advance
+  if (q.type === 'fill') {
+    const inputs = document.querySelectorAll('.fill-blank-input');
+    inputs.forEach((inp, idx) => {
+      inp.addEventListener('input', () => {
+        inp.value = inp.value.toUpperCase().replace(/[^ATGCU]/g, '');
+        if (inp.value && idx < inputs.length - 1) inputs[idx + 1].focus();
+      });
+      inp.addEventListener('keydown', e => {
+        if (e.key === 'Enter') checkBtn.click();
+        if (e.key === 'Backspace' && !inp.value && idx > 0) inputs[idx - 1].focus();
+      });
+    });
+    if (inputs.length) inputs[0].focus();
+  }
+
+  // Option buttons
+  if (q.type === 'transcribe' || q.type === 'identify') {
+    document.querySelectorAll('.option-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (state.answered) return;
+        document.querySelectorAll('.option-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        checkBtn.disabled = false;
+        // Auto-check on click
+        checkAnswer(q);
+      });
+    });
+    checkBtn.style.display = 'none';
+  }
+
+  // Wrong-base click
+  if (q.type === 'wrong-base' || q.type === 'wrong-base-rna') {
+    document.querySelectorAll('.wrong-select-box').forEach(box => {
+      box.addEventListener('click', () => {
+        if (state.answered) return;
+        const idx = parseInt(box.dataset.idx);
+        checkWrongBase(q, idx, box);
+      });
+    });
+    checkBtn.style.display = 'none';
+  }
+
+  checkBtn.addEventListener('click', () => checkAnswer(q));
+  nextBtn.addEventListener('click', () => nextQuestion());
+}
+
+// ───────────────────────────────────────────────
+// CHECK ANSWER
+// ───────────────────────────────────────────────
+function checkAnswer(q) {
+  if (state.answered) return;
+  state.answered = true;
+  stopTimer();
+
+  const feedbackBox = document.getElementById('feedback-box');
+  const checkBtn = document.getElementById('check-btn');
+  const nextBtn = document.getElementById('next-btn');
+  checkBtn.disabled = true;
+  nextBtn.style.display = 'block';
+
+  let correct = false;
+
+  if (q.type === 'fill') {
+    const inputs = document.querySelectorAll('.fill-blank-input');
+    const userAnswers = [...inputs].map(inp => inp.value.toUpperCase().trim());
+    correct = userAnswers.every((a, i) => a === q.answers[i]);
+
+    inputs.forEach((inp, i) => {
+      inp.classList.add(userAnswers[i] === q.answers[i] ? 'correct' : 'wrong');
+      inp.disabled = true;
+    });
+
+    feedbackBox.innerHTML = correct
+      ? `✅ 정답! <br>${q.explanation(userAnswers)}`
+      : `❌ 오답. 정답: ${q.answers.join(', ')}<br>${q.explanation(q.answers)}`;
+    feedbackBox.className = `feedback-box show ${correct ? 'correct-fb' : 'wrong-fb'}`;
+
+  } else if (q.type === 'transcribe') {
+    const selected = document.querySelector('.option-btn.selected');
+    if (!selected) return;
+    const val = selected.dataset.val;
+    correct = val === q.correctStr;
+
+    document.querySelectorAll('.option-btn').forEach(btn => {
+      btn.disabled = true;
+      if (btn.dataset.val === q.correctStr) btn.classList.add('reveal-correct');
+    });
+    selected.classList.add(correct ? 'selected-correct' : 'selected-wrong');
+
+    feedbackBox.innerHTML = correct
+      ? `✅ 정답! ${q.explanation()}`
+      : `❌ 오답. 정답: ${q.correctStr}<br>${q.explanation()}`;
+    feedbackBox.className = `feedback-box show ${correct ? 'correct-fb' : 'wrong-fb'}`;
+
+  } else if (q.type === 'identify') {
+    const selected = document.querySelector('.option-btn.selected');
+    if (!selected) return;
+    const val = selected.dataset.val;
+    correct = val === q.answer;
+
+    document.querySelectorAll('.option-btn').forEach(btn => {
+      btn.disabled = true;
+      if (btn.dataset.val === q.answer) btn.classList.add('reveal-correct');
+    });
+    selected.classList.add(correct ? 'selected-correct' : 'selected-wrong');
+
+    feedbackBox.innerHTML = correct
+      ? `✅ 정답! ${q.explanation()}`
+      : `❌ 오답. 정답: ${q.answer}<br>${q.explanation()}`;
+    feedbackBox.className = `feedback-box show ${correct ? 'correct-fb' : 'wrong-fb'}`;
+  }
+
+  updateScore(correct);
+}
+
+function checkWrongBase(q, clickedIdx, boxEl) {
+  if (state.answered) return;
+  state.answered = true;
+  stopTimer();
+
+  const feedbackBox = document.getElementById('feedback-box');
+  const nextBtn = document.getElementById('next-btn');
+  nextBtn.style.display = 'block';
+
+  const correct = clickedIdx === q.wrongIdx;
+
+  // Disable all boxes
+  document.querySelectorAll('.wrong-select-box').forEach(b => {
+    b.style.pointerEvents = 'none';
+    if (parseInt(b.dataset.idx) === q.wrongIdx) b.classList.add('highlight-correct');
+  });
+
+  boxEl.classList.add(correct ? 'selected-wrong-correct' : 'selected-wrong-miss');
+
+  feedbackBox.innerHTML = correct
+    ? `✅ 정답! ${q.explanation()}`
+    : `❌ 오답. ${q.explanation()}`;
+  feedbackBox.className = `feedback-box show ${correct ? 'correct-fb' : 'wrong-fb'}`;
+
+  updateScore(correct);
+}
+
+// ───────────────────────────────────────────────
+// SCORE & STREAK
+// ───────────────────────────────────────────────
+function updateScore(correct) {
+  if (correct) {
+    const bonus = state.streak >= 3 ? 15 : 10;
+    state.score += bonus;
+    state.correctCount++;
+    state.streak++;
+    state.maxStreak = Math.max(state.maxStreak, state.streak);
+  } else {
+    state.wrongCount++;
+    state.streak = 0;
+  }
+
+  document.getElementById('score-display').textContent = state.score;
+  document.getElementById('streak-display').textContent = state.streak + '🔥';
+}
+
+// ───────────────────────────────────────────────
+// TIMER
+// ───────────────────────────────────────────────
+function startTimer(seconds) {
+  state.timeLeft = seconds;
+  state.maxTime = seconds;
+  updateTimerDisplay();
+
+  state.timer = setInterval(() => {
+    state.timeLeft--;
+    updateTimerDisplay();
+    if (state.timeLeft <= 0) {
+      clearInterval(state.timer);
+      onTimeout();
+    }
+  }, 1000);
+}
+
+function updateTimerDisplay() {
+  const el = document.getElementById('timer-display');
+  const bar = document.getElementById('timer-bar');
+  el.textContent = state.timeLeft;
+
+  const pct = (state.timeLeft / state.maxTime) * 100;
+  bar.style.width = pct + '%';
+
+  if (state.timeLeft <= 5) {
+    el.className = 'stat-value timer-val timer-warn';
+    bar.style.background = '#ff3b3b';
+  } else if (state.timeLeft <= 10) {
+    bar.style.background = 'linear-gradient(90deg, #ff6b35, #ffd166)';
+  } else {
+    el.className = 'stat-value timer-val';
+    bar.style.background = 'linear-gradient(90deg, var(--accent2), var(--accent))';
+  }
+}
+
+function stopTimer() {
+  clearInterval(state.timer);
+}
+
+function onTimeout() {
+  if (state.answered) return;
+  state.answered = true;
+
+  const feedbackBox = document.getElementById('feedback-box');
+  const nextBtn = document.getElementById('next-btn');
+  const checkBtn = document.getElementById('check-btn');
+
+  checkBtn.disabled = true;
+  nextBtn.style.display = 'block';
+  state.timeoutCount++;
+  state.streak = 0;
+  document.getElementById('streak-display').textContent = '0🔥';
+
+  const q = state.questions[state.current];
+  let answerHint = '';
+  if (q.type === 'fill') answerHint = `정답: ${q.answers.join(', ')}`;
+  else if (q.type === 'transcribe') answerHint = `정답: ${q.correctStr}`;
+  else if (q.type === 'identify') answerHint = `정답: ${q.answer}`;
+  else if (q.type === 'wrong-base' || q.type === 'wrong-base-rna') answerHint = `정답 위치: ${q.wrongIdx + 1}번 (${q.wrongBase} → ${q.correctBase})`;
+
+  feedbackBox.innerHTML = `⏱ 시간 초과! ${answerHint}<br>${q.explanation ? q.explanation([]) : ''}`;
+  feedbackBox.className = 'feedback-box show timeout-fb';
+
+  // Reveal correct for options
+  if (q.type === 'transcribe' || q.type === 'identify') {
+    document.querySelectorAll('.option-btn').forEach(btn => {
+      btn.disabled = true;
+      if (btn.dataset.val === (q.correctStr || q.answer)) btn.classList.add('reveal-correct');
+    });
+  }
+  if (q.type === 'wrong-base' || q.type === 'wrong-base-rna') {
+    document.querySelectorAll('.wrong-select-box').forEach(b => {
+      b.style.pointerEvents = 'none';
+      if (parseInt(b.dataset.idx) === q.wrongIdx) b.classList.add('highlight-correct');
+    });
+  }
+}
+
+// ───────────────────────────────────────────────
+// FLOW
+// ───────────────────────────────────────────────
+function nextQuestion() {
+  state.current++;
+  if (state.current >= state.totalQuestions) {
+    endGame();
+    return;
+  }
+  showQuestion(state.current);
+}
+
+function showQuestion(idx) {
+  state.answered = false;
+  stopTimer();
+
+  const q = state.questions[idx];
+  renderQuestion(q, idx);
+
+  const total = state.totalQuestions;
+  document.getElementById('q-display').textContent = `${idx + 1} / ${total}`;
+  document.getElementById('progress-bar').style.width = `${(idx / total) * 100}%`;
+  document.getElementById('progress-text').textContent = `${idx} / ${total}`;
+
+  startTimer(state.maxTime);
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => {
+    s.classList.toggle('hidden', s.id !== id);
+  });
+}
+
+function startGame() {
+  const mode = document.querySelector('input[name="mode"]:checked').value;
+  const count = parseInt(document.getElementById('q-count-sel').value);
+  const time = parseInt(document.getElementById('time-sel').value);
+
+  state.questions = generateQuestions(count, mode);
+  state.current = 0;
+  state.score = 0;
+  state.correctCount = 0;
+  state.wrongCount = 0;
+  state.timeoutCount = 0;
+  state.streak = 0;
+  state.maxStreak = 0;
+  state.totalQuestions = count;
+  state.maxTime = time;
+  state.answered = false;
+
+  document.getElementById('score-display').textContent = '0';
+  document.getElementById('streak-display').textContent = '0🔥';
+
+  showScreen('game-screen');
+  showQuestion(0);
+}
+
+function endGame() {
+  stopTimer();
+  showScreen('end-screen');
+
+  const maxPossible = state.totalQuestions * 15;
+  const pct = (state.score / maxPossible) * 100;
+  let grade, gradeClass;
+  if (pct >= 90) { grade = 'S RANK'; gradeClass = 'grade-S'; }
+  else if (pct >= 75) { grade = 'A RANK'; gradeClass = 'grade-A'; }
+  else if (pct >= 60) { grade = 'B RANK'; gradeClass = 'grade-B'; }
+  else if (pct >= 40) { grade = 'C RANK'; gradeClass = 'grade-C'; }
+  else { grade = 'D RANK'; gradeClass = 'grade-D'; }
+
+  document.getElementById('end-score').textContent = state.score;
+  document.getElementById('end-score-max').textContent = `/ ${maxPossible}점`;
+  const gradeBadge = document.getElementById('end-grade');
+  gradeBadge.textContent = grade;
+  gradeBadge.className = `grade-badge ${gradeClass}`;
+  document.getElementById('end-correct').textContent = state.correctCount;
+  document.getElementById('end-wrong').textContent = state.wrongCount;
+  document.getElementById('end-timeout').textContent = state.timeoutCount;
+  document.getElementById('end-streak').textContent = state.maxStreak;
+}
+
+// ───────────────────────────────────────────────
+// INIT
+// ───────────────────────────────────────────────
+document.querySelectorAll('.mode-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  });
+});
+
+document.getElementById('start-btn').addEventListener('click', startGame);
+document.getElementById('restart-btn').addEventListener('click', startGame);
+document.getElementById('home-btn').addEventListener('click', () => showScreen('start-screen'));
+</script>
+<script src="https://replit-cdn.com/replit-pill/replit-pill.global.js" data-repl-id="7c168b50-4c48-4738-81a8-b9348316cb4d"></script></body>
+</html>
